@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Tower Defense</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header class="topbar">
+        <h1>Tower Defense</h1>
+        <nav class="controls">
+            <button id="btnStart" class="primary">Start</button>
+            <button id="btnPause">Pause</button>
+            <button id="btnRestart">Restart</button>
+        </nav>
+    </header>
+    <main class="layout">
+        <section class="playfield-wrapper">
+            <canvas id="gameCanvas" width="1200" height="720" aria-label="Game canvas" role="img"></canvas>
+            <!-- Mobile Controls Overlay -->
+            <div id="mobileControls" class="mobile-controls hidden">
+                <div class="mobile-control-panel top-panel">
+                    <div class="mobile-stats">
+                        <span class="mobile-stat">❤️ <span id="mobileLives">20</span></span>
+                        <span class="mobile-stat">💰 <span id="mobileMoney">150</span></span>
+                        <span class="mobile-stat">🌊 <span id="mobileWave">0</span></span>
+                        <span class="mobile-stat">⭐ <span id="mobileScore">0</span></span>
+                    </div>
+                    <div class="mobile-game-controls">
+                        <button id="mobilePause" class="mobile-btn">⏸️</button>
+                        <button id="mobileRestart" class="mobile-btn">🔄</button>
+                    </div>
+                </div>
+                <div class="mobile-control-panel bottom-panel">
+                    <div class="mobile-tower-selection">
+                        <div class="mobile-tower-btn selected" data-type="basic">
+                            <span class="tower-icon">🏛️</span>
+                            <span class="tower-price">$50</span>
+                        </div>
+                        <div class="mobile-tower-btn" data-type="sniper">
+                            <span class="tower-icon">🎯</span>
+                            <span class="tower-price">$100</span>
+                        </div>
+                        <div class="mobile-tower-btn" data-type="cannon">
+                            <span class="tower-icon">💥</span>
+                            <span class="tower-price">$80</span>
+                        </div>
+                        <div class="mobile-tower-btn" data-type="laser">
+                            <span class="tower-icon">⚡</span>
+                            <span class="tower-price">$120</span>
+                        </div>
+                    </div>
+                    <div class="mobile-wave-info">
+                        <span id="mobileWaveInfo">Tap Start to begin</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <aside id="hud" class="hud" aria-live="polite">
+            <div class="stat"><span class="label">Lives:</span><span id="statLives">0</span></div>
+            <div class="stat"><span class="label">Money:</span><span id="statMoney">0</span></div>
+            <div class="stat"><span class="label">Wave:</span><span id="statWave">0</span></div>
+            <div class="stat"><span class="label">Score:</span><span id="statScore">0</span></div>
+            <div class="tower-info">
+                <h3>Tower Selection</h3>
+                <div class="tower-grid">
+                    <div class="tower-option selected" id="basicTower" data-type="basic">
+                        <span class="tower-name">Basic</span>
+                        <span class="tower-cost">$50</span>
+                        <span class="tower-stats">DMG: 50, RNG: 2.5</span>
+                    </div>
+                    <div class="tower-option" id="sniperTower" data-type="sniper">
+                        <span class="tower-name">Sniper</span>
+                        <span class="tower-cost">$100</span>
+                        <span class="tower-stats">DMG: 120, RNG: 4.5</span>
+                    </div>
+                    <div class="tower-option" id="cannonTower" data-type="cannon">
+                        <span class="tower-name">Cannon</span>
+                        <span class="tower-cost">$80</span>
+                        <span class="tower-stats">DMG: 80, AOE</span>
+                    </div>
+                    <div class="tower-option" id="laserTower" data-type="laser">
+                        <span class="tower-name">Laser</span>
+                        <span class="tower-cost">$120</span>
+                        <span class="tower-stats">DMG: 35, Fast</span>
+                    </div>
+                </div>
+                <div class="wave-info" id="waveInfo">
+                    <span class="wave-status">Click Start to begin</span>
+                </div>
+            </div>
+        </aside>
+    </main>
+    <footer class="footer">&copy; 2025 Tower Defense</footer>
+    <div id="overlay" class="overlay hidden">
+        <div class="panel" id="startScreen">
+            <h2>🏰 Tower Defense</h2>
+            <p>Defend your base against waves of enemies!</p>
+            <div class="instructions">
+                <p><strong>How to Play:</strong></p>
+                <ul>
+                    <li>Click on grass tiles to place towers ($50 each)</li>
+                    <li>Towers automatically target and shoot enemies</li>
+                    <li>Hover over towers to see their range</li>
+                    <li>Prevent enemies from reaching your base</li>
+                    <li>Earn money by defeating enemies</li>
+                </ul>
+            </div>
+            <button id="overlayStart" class="primary large">Start Game</button>
+        </div>
+        <div class="panel hidden" id="gameOverScreen">
+            <h2>💀 Game Over</h2>
+            <p>Your base has fallen to the enemy forces.</p>
+            <div class="final-stats" id="finalStats">
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p>Waves Survived: <span id="finalWave">0</span></p>
+                <p>Enemies Defeated: <span id="enemiesKilled">0</span></p>
+            </div>
+            <button id="overlayRestart" class="primary large">Try Again</button>
+        </div>
+        <div class="panel hidden" id="pauseScreen">
+            <h2>⏸️ Game Paused</h2>
+            <p>The battle waits for your return...</p>
+            <div class="pause-stats">
+                <p>Current Wave: <span id="pauseWave">0</span></p>
+                <p>Score: <span id="pauseScore">0</span></p>
+                <p>Money: <span id="pauseMoney">0</span></p>
+            </div>
+            <button id="resumeButton" class="primary large">Resume Game</button>
+            <button id="restartFromPause" class="secondary">Restart</button>
+        </div>
+    </div>
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
