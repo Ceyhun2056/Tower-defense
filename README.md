@@ -117,8 +117,3 @@ No installation required - just open and play!
 - **Level Editor**: Create custom maps and share with others
 - **Multiplayer**: Competitive and cooperative game modes
 
----
-
-*Built with ❤️ using vanilla JavaScript and HTML5 Canvas*
-
-**© 2025 Tower Defense Project**

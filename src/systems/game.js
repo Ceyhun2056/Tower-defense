@@ -189,9 +189,7 @@ export class Game {
 
     if (isBossWave && this.enemiesSpawned === 0) {
       // First enemy in boss wave is always a boss
-      const bossTypes = ['shield-regen', 'spawner', 'armored', 'phase'];
-      const bossType = bossTypes[Math.floor(wave / 10) % bossTypes.length];
-      enemy = createBossEnemy(bossType, wave, this.map.path, this.gridSize);
+      enemy = createBossEnemy(wave, this.map.path, this.gridSize);
     } else if (isBossWave) {
       // Remaining enemies in boss wave are special types
       const specialTypes = ['camo', 'split', 'healer', 'flying'];
@@ -260,7 +258,7 @@ export class Game {
       // Split enemies spawn smaller versions when killed
       const splitCount = enemy.splitCount || 2;
       for (let i = 0; i < splitCount; i++) {
-        const splitEnemy = createEnemy('fast', this.map.path, this.currentWave, this.gridSize);
+        const splitEnemy = createEnemy('fast', this.map.path, this.state.wave, this.gridSize);
         splitEnemy.x = enemy.x;
         splitEnemy.y = enemy.y;
         splitEnemy.pathIndex = enemy.pathIndex;
@@ -271,6 +269,15 @@ export class Game {
         this.enemies.push(splitEnemy);
       }
     }
+  }
+
+  // Create a minion enemy for boss spawning
+  createMinionEnemy(x, y, pathIndex) {
+    const minion = createSpecialEnemy('minion', this.state.wave, this.map.path, this.gridSize);
+    minion.x = x + (Math.random() - 0.5) * 60;
+    minion.y = y + (Math.random() - 0.5) * 60;
+    minion.pathIndex = pathIndex;
+    return minion;
   }
 
   // Check if a tile is buildable (grass, not path, no existing tower)

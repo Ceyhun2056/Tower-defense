@@ -293,13 +293,11 @@ export class Enemy {
     const minionCount = game.enemies.filter(e => e.type === 'minion').length;
     if (minionCount >= this.abilities.minionsSpawn.maxMinions) return;
 
-    // Import and create minion
-    import('./enemyTypes.js').then(({ createEnemy }) => {
-      const minion = createEnemy('minion', this.wave, game.map.path, this.gridSize);
-      minion.x = this.x + (Math.random() - 0.5) * 60;
-      minion.y = this.y + (Math.random() - 0.5) * 60;
+    // Create minion directly without dynamic import
+    const minion = game.createMinionEnemy(this.x, this.y, this.pathIndex);
+    if (minion) {
       game.enemies.push(minion);
-    });
+    }
   }
 
   // Heal nearby enemies (for healer enemies)
