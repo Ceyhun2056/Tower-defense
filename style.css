@@ -170,8 +170,8 @@ button.large {
 
 .tower-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
@@ -608,4 +608,232 @@ button.large {
     border-radius: 0;
     border: none;
   }
+}
+
+/* ====== UPGRADE UI STYLES ====== */
+
+.upgrade-panel {
+  position: fixed;
+  background: linear-gradient(145deg, #0d1117, #161b22);
+  border: 2px solid #30363d;
+  border-radius: 12px;
+  padding: 0;
+  min-width: 320px;
+  max-width: 400px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.6), 0 0 20px rgba(31, 111, 235, 0.1);
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+  animation: upgradePanel 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes upgradePanel {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.upgrade-panel.hidden {
+  display: none;
+}
+
+.upgrade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #30363d;
+  background: linear-gradient(145deg, #21262d, #30363d);
+  border-radius: 10px 10px 0 0;
+}
+
+.upgrade-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #7d8590;
+  font-size: 1.4rem;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #30363d;
+  color: #f0f6fc;
+  transform: none;
+  box-shadow: none;
+}
+
+.tower-info {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #21262d;
+}
+
+.tower-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: #21262d;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #7d8590;
+  font-weight: 500;
+}
+
+.upgrade-options {
+  padding: 1rem 1.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.upgrade-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(145deg, #161b22, #21262d);
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.upgrade-option:hover {
+  border-color: #58a6ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.upgrade-option.unaffordable {
+  opacity: 0.6;
+  border-color: #f85149;
+}
+
+.upgrade-option.unaffordable:hover {
+  border-color: #f85149;
+  transform: none;
+  box-shadow: none;
+}
+
+.upgrade-info {
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.upgrade-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.upgrade-description {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #7d8590;
+  line-height: 1.4;
+}
+
+.upgrade-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.upgrade-stats .stat {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: #30363d;
+  border-radius: 4px;
+  border: none;
+  color: #58a6ff;
+  font-weight: 500;
+  min-width: auto;
+}
+
+.upgrade-cost {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.cost {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.upgrade-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  background: linear-gradient(145deg, #238636, #2ea043);
+  border: 1px solid #2ea043;
+  color: #ffffff;
+}
+
+.upgrade-btn:hover:not(.disabled) {
+  background: linear-gradient(145deg, #2ea043, #46954a);
+  transform: translateY(-1px);
+}
+
+.upgrade-btn.disabled {
+  background: #21262d;
+  color: #6e7681;
+  border-color: #30363d;
+  cursor: not-allowed;
+}
+
+.upgrade-actions {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #21262d;
+  background: #0d1117;
+  border-radius: 0 0 10px 10px;
+}
+
+.sell-btn {
+  width: 100%;
+  background: linear-gradient(145deg, #da3633, #f85149);
+  border: 1px solid #f85149;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sell-btn:hover {
+  background: linear-gradient(145deg, #f85149, #ff7b72);
+  transform: translateY(-1px);
+}
+
+.no-upgrades {
+  text-align: center;
+  color: #7d8590;
+  font-style: italic;
+  margin: 1rem 0;
 }

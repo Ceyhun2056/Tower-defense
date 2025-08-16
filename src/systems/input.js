@@ -3,6 +3,7 @@ export class Input {
     this.canvas = canvas;
     this.game = game;
     this.rect = canvas.getBoundingClientRect();
+    this.dpr = window.devicePixelRatio || 1;
     window.addEventListener('resize', () => this._updateRect());
     canvas.addEventListener('mousemove', e => this._onMove(e));
     canvas.addEventListener('mouseleave', () => { this.game.hoverCell = null; });
@@ -15,18 +16,30 @@ export class Input {
   }
   
   _updateRect() { 
-    this.rect = this.canvas.getBoundingClientRect(); 
+    this.rect = this.canvas.getBoundingClientRect();
+    // Also store device pixel ratio for coordinate conversion
+    this.dpr = window.devicePixelRatio || 1;
   }
   
   _posFromEvent(e) {
-    const x = (e.clientX - this.rect.left) / this.rect.width * this.canvas.width;
-    const y = (e.clientY - this.rect.top) / this.rect.height * this.canvas.height;
+    // Calculate position accounting for canvas scaling and device pixel ratio
+    const rect = this.rect;
+    const canvasWidth = this.canvas.width / this.dpr;
+    const canvasHeight = this.canvas.height / this.dpr;
+    
+    const x = (e.clientX - rect.left) * (canvasWidth / rect.width);
+    const y = (e.clientY - rect.top) * (canvasHeight / rect.height);
     return { x, y };
   }
   
   _posFromTouch(touch) {
-    const x = (touch.clientX - this.rect.left) / this.rect.width * this.canvas.width;
-    const y = (touch.clientY - this.rect.top) / this.rect.height * this.canvas.height;
+    // Calculate position accounting for canvas scaling and device pixel ratio
+    const rect = this.rect;
+    const canvasWidth = this.canvas.width / this.dpr;
+    const canvasHeight = this.canvas.height / this.dpr;
+    
+    const x = (touch.clientX - rect.left) * (canvasWidth / rect.width);
+    const y = (touch.clientY - rect.top) * (canvasHeight / rect.height);
     return { x, y };
   }
   
@@ -75,9 +88,23 @@ export class Input {
     const cellX = Math.floor(x / g);
     const cellY = Math.floor(y / g);
     
+    // Ensure coordinates are within valid map bounds
     if (cellX >= 0 && cellY >= 0 && cellX < this.game.map.width && cellY < this.game.map.height) {
-      // Try to place a tower
-      this.game.placeTower(cellX, cellY);
+      // Check if there's a tower at this position
+      const existingTower = this.game.towers.find(tower => tower.x === cellX && tower.y === cellY);
+      
+      if (existingTower) {
+        // Show upgrade UI for the clicked tower
+        if (this.upgradeUI) {
+          // Convert canvas coordinates back to screen coordinates for UI positioning
+          const screenX = (x / (this.canvas.width / this.dpr)) * this.rect.width + this.rect.left;
+          const screenY = (y / (this.canvas.height / this.dpr)) * this.rect.height + this.rect.top;
+          this.upgradeUI.show(existingTower, screenX, screenY);
+        }
+      } else {
+        // Try to place a tower
+        this.game.placeTower(cellX, cellY);
+      }
     }
   }
 }

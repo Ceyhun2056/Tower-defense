@@ -1,9 +1,16 @@
 import { renderMap } from '../map/map.js';
 import { Enemy } from '../entities/enemy.js';
 import { Tower } from '../entities/tower.js';
-import { BasicTower, SniperTower, CannonTower, LaserTower } from '../entities/towerTypes.js';
+import { 
+  BasicTower, SniperTower, CannonTower, LaserTower,
+  GuardTower, RapidTower, RailgunTower, AssassinTower,
+  FireTower, IceTower, PoisonTower, LightningTower,
+  AmplifierTower
+} from '../entities/towerTypes.js';
 import { createEnemy } from '../entities/enemyTypes.js';
+import { createBossEnemy, createSpecialEnemy } from '../entities/bossEnemies.js';
 import { Projectile } from '../entities/projectile.js';
+import { getTowerInfo } from '../entities/towerUpgrades.js';
 
 export class Game {
   constructor(ctx, canvas) {
@@ -82,7 +89,7 @@ export class Game {
     // Update enemies
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
-      enemy.update(dt);
+      enemy.update(dt, this);
       
       // Check if enemy reached the end
       if (enemy.pathIndex >= this.map.path.length - 1) {
@@ -94,6 +101,9 @@ export class Game {
       
       // Remove dead enemies and give money
       if (!enemy.active) {
+        // Handle special death effects
+        this.handleEnemyDeath(enemy);
+        
         this.state.money += enemy.reward;
         this.state.score += enemy.reward;
         this.enemiesKilled++;
@@ -103,7 +113,14 @@ export class Game {
     }
     
     // Update towers
-    this.towers.forEach(tower => tower.update(dt, this.enemies, this));
+    this.towers.forEach(tower => {
+      // Reset multipliers each frame (support towers will reapply them)
+      tower.damageMultiplier = 1.0;
+      tower.rangeMultiplier = 1.0;
+      tower.fireRateMultiplier = 1.0;
+      
+      tower.update(dt, this.enemies, this);
+    });
     
     // Update projectiles
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
@@ -146,37 +163,113 @@ export class Game {
   startWave() {
     this.state.wave++;
     this.waveActive = true;
-    this.enemiesPerWave = 5 + Math.floor(this.state.wave / 2); // More enemies each wave
     
-    // Decrease spawn delay progressively - faster spawning each wave
-    this.spawnDelay = Math.max(0.3, 1 - (this.state.wave - 1) * 0.05); // Reduces by 0.05 seconds each wave, minimum 0.3s
+    // Check if this is a boss wave (every 10th wave)
+    const isBossWave = this.state.wave % 10 === 0;
+    
+    if (isBossWave) {
+      // Boss waves have fewer but stronger enemies
+      this.enemiesPerWave = 1 + Math.floor(this.state.wave / 20); // 1 boss + some regular enemies
+      this.spawnDelay = 3; // Longer delay for boss waves
+    } else {
+      // Regular waves scale up
+      this.enemiesPerWave = 5 + Math.floor(this.state.wave / 2);
+      this.spawnDelay = Math.max(0.3, 1 - (this.state.wave - 1) * 0.05);
+    }
     
     this._notifyState();
   }
 
   spawnEnemy() {
-    if (this.map && this.map.path.length > 0) {
-      // Determine enemy type based on wave
-      let enemyType = 'basic';
-      
-      if (this.state.wave >= 3 && Math.random() < 0.3) {
-        enemyType = 'fast';
+    if (!this.map || !this.map.path.length) return;
+
+    const wave = this.state.wave;
+    const isBossWave = wave % 10 === 0;
+    let enemy;
+
+    if (isBossWave && this.enemiesSpawned === 0) {
+      // First enemy in boss wave is always a boss
+      const bossTypes = ['shield-regen', 'spawner', 'armored', 'phase'];
+      const bossType = bossTypes[Math.floor(wave / 10) % bossTypes.length];
+      enemy = createBossEnemy(bossType, wave, this.map.path, this.gridSize);
+    } else if (isBossWave) {
+      // Remaining enemies in boss wave are special types
+      const specialTypes = ['camo', 'split', 'healer', 'flying'];
+      const specialType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
+      enemy = createSpecialEnemy(specialType, wave, this.map.path, this.gridSize);
+    } else {
+      // Regular wave with mixed enemy types
+      enemy = this.spawnRegularWaveEnemy(wave);
+    }
+
+    this.enemies.push(enemy);
+  }
+
+  spawnRegularWaveEnemy(wave) {
+    // Introduce special enemies gradually
+    let enemyType = 'basic';
+    const rand = Math.random();
+
+    if (wave >= 15) {
+      // Late game: all enemy types possible
+      const allTypes = ['basic', 'fast', 'tank', 'flying', 'camo', 'split', 'healer', 'swarm'];
+      enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
+    } else if (wave >= 12) {
+      // Mid-late game: introduce swarm and healer
+      if (rand < 0.15) enemyType = 'swarm';
+      else if (rand < 0.25) enemyType = 'healer';
+      else if (rand < 0.4) enemyType = 'camo';
+      else if (rand < 0.55) enemyType = 'split';
+      else if (rand < 0.7) enemyType = 'flying';
+      else if (rand < 0.85) enemyType = 'fast';
+      else enemyType = 'tank';
+    } else if (wave >= 8) {
+      // Mid game: introduce camo and split
+      if (rand < 0.2) enemyType = 'camo';
+      else if (rand < 0.35) enemyType = 'split';
+      else if (rand < 0.55) enemyType = 'flying';
+      else if (rand < 0.75) enemyType = 'fast';
+      else enemyType = 'tank';
+    } else if (wave >= 5) {
+      // Early-mid game: basic enemy types
+      if (rand < 0.3) enemyType = 'flying';
+      else if (rand < 0.6) enemyType = 'fast';
+      else enemyType = 'tank';
+    } else if (wave >= 3) {
+      // Early game: fast enemies
+      if (rand < 0.4) enemyType = 'fast';
+      else enemyType = 'basic';
+    }
+
+    // Check if we should spawn special enemies
+    if (['camo', 'split', 'healer', 'swarm'].includes(enemyType)) {
+      return createSpecialEnemy(enemyType, wave, this.map.path, this.gridSize);
+    } else {
+      return createEnemy(enemyType, this.map.path, wave, this.gridSize);
+    }
+  }
+
+  handleEnemyDeath(enemy) {
+    // Handle special enemy death effects
+    if (enemy.onDeath) {
+      enemy.onDeath(this);
+    }
+    
+    // Handle special enemy types with death effects
+    if (enemy.type === 'split') {
+      // Split enemies spawn smaller versions when killed
+      const splitCount = enemy.splitCount || 2;
+      for (let i = 0; i < splitCount; i++) {
+        const splitEnemy = createEnemy('fast', this.map.path, this.currentWave, this.gridSize);
+        splitEnemy.x = enemy.x;
+        splitEnemy.y = enemy.y;
+        splitEnemy.pathIndex = enemy.pathIndex;
+        splitEnemy.health *= 0.5; // Half health
+        splitEnemy.maxHealth *= 0.5;
+        splitEnemy.reward = Math.floor(enemy.reward * 0.3); // Reduced reward
+        splitEnemy.size *= 0.7; // Smaller size
+        this.enemies.push(splitEnemy);
       }
-      if (this.state.wave >= 5 && Math.random() < 0.2) {
-        enemyType = 'tank';
-      }
-      if (this.state.wave >= 7 && Math.random() < 0.15) {
-        enemyType = 'flying';
-      }
-      
-      // Mix enemy types in later waves
-      if (this.state.wave >= 8) {
-        const types = ['basic', 'fast', 'tank', 'flying'];
-        enemyType = types[Math.floor(Math.random() * types.length)];
-      }
-      
-      const enemy = createEnemy(enemyType, this.map.path, this.state.wave, this.gridSize);
-      this.enemies.push(enemy);
     }
   }
 
@@ -210,6 +303,23 @@ export class Game {
       case 'laser':
         tower = new LaserTower(x, y, this.gridSize);
         break;
+      // Elemental towers
+      case 'fire':
+        tower = new FireTower(x, y, this.gridSize);
+        break;
+      case 'ice':
+        tower = new IceTower(x, y, this.gridSize);
+        break;
+      case 'poison':
+        tower = new PoisonTower(x, y, this.gridSize);
+        break;
+      case 'lightning':
+        tower = new LightningTower(x, y, this.gridSize);
+        break;
+      // Support towers
+      case 'amplifier':
+        tower = new AmplifierTower(x, y, this.gridSize);
+        break;
       default:
         tower = new BasicTower(x, y, this.gridSize);
     }
@@ -217,20 +327,32 @@ export class Game {
     if (!this.canBuildAt(x, y)) {
       return false; // Can't build here
     }
-    
+
     if (this.state.money < tower.cost) {
       return false; // Not enough money
     }
-    
+
     this.state.money -= tower.cost;
     this.towers.push(tower);
     this._notifyState();
     return true;
   }
 
-  // Method for towers to create projectiles
-  createProjectile(startX, startY, target, damage, speed = 300) {
-    const projectile = new Projectile(startX, startY, target, damage, speed);
+  // Method for towers to create projectiles with special effects
+  createProjectile(startX, startY, target, damage, speed = 300, special = null, specialData = null) {
+    const projectile = new Projectile(startX, startY, target, damage, speed, special, specialData);
+    
+    // Apply special properties for backward compatibility
+    if (special && specialData) {
+      // Handle special projectile types
+      if (special === 'splash') {
+        projectile.splashRadius = specialData.radius || 2;
+        projectile.type = 'cannon';
+      } else if (special === 'pierce') {
+        projectile.type = 'laser';
+      }
+    }
+    
     this.projectiles.push(projectile);
     return projectile;
   }
@@ -261,16 +383,25 @@ export class Game {
       
       if (this.canBuildAt(x, y)) {
         // Green highlight for buildable
-        ctx.strokeStyle = 'rgba(100, 255, 100, 0.6)';
-        ctx.fillStyle = 'rgba(100, 255, 100, 0.1)';
+        ctx.strokeStyle = 'rgba(100, 255, 100, 0.8)';
+        ctx.fillStyle = 'rgba(100, 255, 100, 0.15)';
         ctx.fillRect(x * this.gridSize + 1, y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
+        
+        // Add a center dot to show exact position
+        ctx.fillStyle = 'rgba(100, 255, 100, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x * this.gridSize + this.gridSize/2, y * this.gridSize + this.gridSize/2, 4, 0, Math.PI * 2);
+        ctx.fill();
       } else {
         // Red highlight for non-buildable
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.15)';
+        ctx.fillRect(x * this.gridSize + 1, y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
       }
       
       ctx.lineWidth = 2;
       ctx.strokeRect(x * this.gridSize + 1, y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
+      
       ctx.restore();
     }
   }
@@ -296,12 +427,7 @@ export class Game {
   }
 
   getTowerInfo(type) {
-    const towerTypes = {
-      basic: { name: 'Basic Tower', cost: 50, damage: 50, range: 2.5, rate: 1.2 },
-      sniper: { name: 'Sniper Tower', cost: 100, damage: 120, range: 4.5, rate: 0.6 },
-      cannon: { name: 'Cannon Tower', cost: 80, damage: 80, range: 2.8, rate: 0.8 },
-      laser: { name: 'Laser Tower', cost: 120, damage: 35, range: 3.2, rate: 3.0 }
-    };
-    return towerTypes[type] || towerTypes.basic;
+    // Use the centralized tower info from towerUpgrades.js
+    return getTowerInfo(type);
   }
 }

@@ -15,6 +15,23 @@ export class Tower {
     this.type = 'basic';
     this.projectileSpeed = 300;
     this.color = { base: '#4a5568', barrel: '#2d3748' };
+    
+    // Upgrade system properties
+    this.upgraded = false;
+    this.upgradeType = null; // The specific upgrade path taken
+    this.special = null; // Special abilities like 'pierce', 'chain', etc.
+    this.sellValue = Math.floor(this.cost * 0.7);
+    
+    // Effects and buffs
+    this.damageMultiplier = 1.0;
+    this.rangeMultiplier = 1.0;
+    this.fireRateMultiplier = 1.0;
+    this.effects = new Set(); // Status effects like burn, slow, etc.
+    
+    // Special ability timers
+    this.burnTimer = 0;
+    this.freezeTimer = 0;
+    this.chainCooldown = 0;
   }
 
   // Find the nearest enemy within range
@@ -39,9 +56,59 @@ export class Tower {
     return nearestEnemy;
   }
 
+  // Upgrade this tower to a new type
+  upgrade(upgradeType, upgradeData) {
+    this.upgraded = true;
+    this.upgradeType = upgradeType;
+    this.level = 2;
+    
+    // Apply stat changes
+    if (upgradeData.stats) {
+      this.damage = upgradeData.stats.damage || this.damage;
+      this.range = upgradeData.stats.range || this.range;
+      this.fireRate = upgradeData.stats.fireRate || this.fireRate;
+    }
+    
+    // Apply visual changes
+    if (upgradeData.color) {
+      this.color = upgradeData.color;
+    }
+    
+    // Apply special abilities
+    if (upgradeData.special) {
+      this.special = upgradeData.special;
+    }
+    
+    // Update sell value
+    this.sellValue = Math.floor((this.cost + upgradeData.cost) * 0.7);
+    
+    return true;
+  }
+
+  // Get effective stats with multipliers applied
+  getEffectiveDamage() {
+    return this.damage * this.damageMultiplier;
+  }
+
+  getEffectiveRange() {
+    return this.range * this.rangeMultiplier;
+  }
+
+  getEffectiveFireRate() {
+    return this.fireRate * this.fireRateMultiplier;
+  }
+
+  // Check if this tower can be upgraded
+  canUpgrade() {
+    return !this.upgraded && this.level === 1;
+  }
+
   // Update tower logic - find target and shoot
   update(dt, enemies, game) {
     this.lastShot += dt;
+    
+    // Update special ability timers
+    this.chainCooldown = Math.max(0, this.chainCooldown - dt);
     
     // Find a new target if current one is invalid
     if (!this.target || !this.target.active) {
@@ -61,16 +128,82 @@ export class Tower {
     }
     
     // Shoot at target if ready
-    if (this.target && this.lastShot >= 1 / this.fireRate) {
-      this.shoot(game);
+    if (this.target && this.lastShot >= 1 / this.getEffectiveFireRate()) {
+      this.shoot(game, enemies);
       this.lastShot = 0;
     }
   }
 
   // Shoot at the current target by creating a projectile
-  shoot(game) {
-    if (this.target && game) {
-      game.createProjectile(this.centerX, this.centerY, this.target, this.damage, this.projectileSpeed);
+  shoot(game, enemies) {
+    if (!this.target || !game) return;
+
+    const damage = this.getEffectiveDamage();
+
+    // Handle special abilities
+    switch (this.special) {
+      case 'pierce':
+        this.shootPierce(game, enemies, damage);
+        break;
+      case 'critical':
+        this.shootCritical(game, damage);
+        break;
+      case 'chain':
+        this.shootChain(game, enemies, damage);
+        break;
+      case 'beam':
+        this.shootBeam(game, damage);
+        break;
+      default:
+        game.createProjectile(this.centerX, this.centerY, this.target, damage, this.projectileSpeed, this.special);
+    }
+  }
+
+  // Pierce attack - shoots through multiple enemies
+  shootPierce(game, enemies, damage) {
+    const angle = Math.atan2(this.target.y - this.centerY, this.target.x - this.centerX);
+    const projectileData = {
+      special: 'pierce',
+      pierceCount: 3,
+      pierceDamage: damage
+    };
+    game.createProjectile(this.centerX, this.centerY, this.target, damage, this.projectileSpeed * 1.5, 'pierce', projectileData);
+  }
+
+  // Critical hit attack
+  shootCritical(game, damage) {
+    const isCritical = Math.random() < 0.25; // 25% critical chance
+    const finalDamage = isCritical ? damage * 3 : damage;
+    const projectileData = { critical: isCritical };
+    game.createProjectile(this.centerX, this.centerY, this.target, finalDamage, this.projectileSpeed, 'critical', projectileData);
+  }
+
+  // Chain lightning attack
+  shootChain(game, enemies, damage) {
+    if (this.chainCooldown > 0) {
+      // Regular shot if chain is on cooldown
+      game.createProjectile(this.centerX, this.centerY, this.target, damage, this.projectileSpeed);
+      return;
+    }
+
+    const projectileData = {
+      chainCount: 3,
+      chainRange: this.gridSize * 2,
+      chainDamage: damage * 0.7
+    };
+    game.createProjectile(this.centerX, this.centerY, this.target, damage, this.projectileSpeed, 'chain', projectileData);
+    this.chainCooldown = 0.5; // 0.5 second cooldown
+  }
+
+  // Continuous beam attack
+  shootBeam(game, damage) {
+    // Beam does damage over time while targeting
+    if (this.target && this.target.active) {
+      this.target.takeDamage(damage * 0.1); // 10% of damage per frame while beaming
+      
+      // Create visual beam effect
+      const projectileData = { beam: true, duration: 0.1 };
+      game.createProjectile(this.centerX, this.centerY, this.target, 0, 999, 'beam', projectileData);
     }
   }
 

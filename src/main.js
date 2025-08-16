@@ -1,6 +1,7 @@
 import { Game } from './systems/game.js';
 import { initMap } from './map/map.js';
 import { Input } from './systems/input.js';
+import { UpgradeUI } from './systems/upgradeUI.js';
 
 // Entry point
 const canvas = document.getElementById('gameCanvas');
@@ -10,6 +11,10 @@ const game = new Game(ctx, canvas);
 game.map = initMap();
 
 const input = new Input(canvas, game);
+const upgradeUI = new UpgradeUI(game);
+
+// Make upgradeUI available to input system
+input.upgradeUI = upgradeUI;
 
 // UI elements
 const statLives = document.getElementById('statLives');
