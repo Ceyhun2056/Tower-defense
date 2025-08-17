@@ -53,7 +53,7 @@ export class Enemy {
     if (!this.active) return;
 
     // Update status effects first
-    this.updateStatusEffects(dt);
+    this.updateStatusEffects(dt, game);
     
     // Update special abilities
     this.updateAbilities(dt, game);
@@ -103,7 +103,7 @@ export class Enemy {
   }
 
   // Take damage, returns true if killed
-  takeDamage(amount, damageType = 'normal') {
+  takeDamage(amount, damageType = 'normal', game = null) {
     // Apply armor reduction
     let finalDamage = amount;
     if (this.armor > 0 && damageType !== 'true') {
@@ -117,13 +117,19 @@ export class Enemy {
       finalDamage -= shieldDamage;
       
       // Show shield damage
-      this.addDamageNumber(shieldDamage, 'shield');
+      if (game && game.createDamageNumber) {
+        game.createDamageNumber(this.x, this.y, shieldDamage, 'shield');
+      }
     }
 
     // Apply remaining damage to health
     if (finalDamage > 0) {
       this.health -= finalDamage;
-      this.addDamageNumber(finalDamage, damageType);
+      if (game && game.createDamageNumber) {
+        const isCritical = finalDamage > amount * 1.5; // Critical if 50% more than base
+        const displayType = isCritical ? 'critical' : damageType;
+        game.createDamageNumber(this.x, this.y, finalDamage, displayType);
+      }
     }
 
     if (this.health <= 0) {
@@ -181,13 +187,13 @@ export class Enemy {
   }
 
   // Update status effects
-  updateStatusEffects(dt) {
+  updateStatusEffects(dt, game = null) {
     // Burn damage over time
     const burn = this.statusEffects.burn;
     if (burn.active) {
       burn.lastTick += dt;
       if (burn.lastTick >= burn.interval) {
-        this.takeDamage(burn.damage, 'burn');
+        this.takeDamage(burn.damage, 'burn', game);
         burn.lastTick = 0;
       }
       burn.duration -= dt;
@@ -201,7 +207,7 @@ export class Enemy {
     if (poison.active) {
       poison.lastTick += dt;
       if (poison.lastTick >= poison.interval) {
-        this.takeDamage(poison.damage * poison.stacks, 'poison');
+        this.takeDamage(poison.damage * poison.stacks, 'poison', game);
         poison.lastTick = 0;
       }
       poison.duration -= dt;

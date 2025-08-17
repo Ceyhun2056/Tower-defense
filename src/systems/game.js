@@ -11,6 +11,60 @@ import { createEnemy } from '../entities/enemyTypes.js';
 import { createBossEnemy, createSpecialEnemy } from '../entities/bossEnemies.js';
 import { Projectile } from '../entities/projectile.js';
 import { getTowerInfo } from '../entities/towerUpgrades.js';
+import { AchievementManager } from './achievements.js';
+import { ThemeManager } from './themeManager.js';
+
+// Floating damage number class
+class DamageNumber {
+  constructor(x, y, damage, type = 'normal') {
+    this.x = x + (Math.random() - 0.5) * 20; // Random offset
+    this.y = y - 10;
+    this.damage = Math.round(damage);
+    this.opacity = 1;
+    this.offsetY = 0;
+    this.life = 1.5; // Seconds to live
+    this.type = type;
+    
+    // Color based on damage type
+    this.color = this.getColor(type);
+  }
+  
+  getColor(type) {
+    switch (type) {
+      case 'burn': return '#ff6b35';
+      case 'poison': return '#4ecdc4';
+      case 'freeze': return '#45b7d1';
+      case 'electric': return '#f9ca24';
+      case 'critical': return '#ff3838';
+      case 'boss': return '#8e44ad';
+      default: return '#ffffff';
+    }
+  }
+  
+  update(dt) {
+    this.life -= dt;
+    this.offsetY -= 60 * dt; // Float upward
+    this.opacity = Math.max(0, this.life / 1.5);
+    return this.life > 0;
+  }
+  
+  render(ctx) {
+    if (this.opacity <= 0) return;
+    
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.fillStyle = this.color;
+    ctx.font = this.type === 'critical' ? 'bold 16px Arial' : '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    
+    const text = this.type === 'critical' ? `${this.damage}!` : `${this.damage}`;
+    ctx.strokeText(text, this.x, this.y + this.offsetY);
+    ctx.fillText(text, this.x, this.y + this.offsetY);
+    ctx.restore();
+  }
+}
 
 export class Game {
   constructor(ctx, canvas) {
@@ -27,6 +81,7 @@ export class Game {
     this.enemies = [];
     this.towers = [];
     this.projectiles = [];
+    this.damageNumbers = []; // Floating damage numbers
     this.selectedTowerType = 'basic'; // for tower selection
     this.waveTimer = 0;
     this.waveDelay = 3; // seconds between waves
@@ -44,6 +99,8 @@ export class Game {
     };
     this.onStateChange = null;
     this.onGameOver = null;
+    this.achievements = new AchievementManager(this);
+    this.themeManager = new ThemeManager();
     this._anim = this._anim.bind(this);
   }
 
@@ -66,13 +123,107 @@ export class Game {
     this.enemies = [];
     this.towers = [];
     this.projectiles = [];
+    this.damageNumbers = [];
     this.waveTimer = 0;
     this.enemiesSpawned = 0;
     this.waveActive = false;
     this.enemiesKilled = 0;
-    this.state = { lives: 20, money: 100, wave: 0, score: 0 };
+    this.state = { lives: 20, money: 150, wave: 0, score: 0 };
     this._notifyState();
     this.start();
+  }
+
+  // Save game state
+  saveGame() {
+    const saveData = {
+      state: { ...this.state },
+      enemiesKilled: this.enemiesKilled,
+      towers: this.towers.map(tower => ({
+        type: tower.type,
+        x: tower.x,
+        y: tower.y,
+        upgradeLevel: tower.upgradeLevel || 0,
+        upgrades: tower.upgrades || []
+      })),
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('towerDefenseSave', JSON.stringify(saveData));
+    this.createDamageNumber(600, 50, 'Game Saved!', 'normal');
+  }
+
+  // Load game state
+  loadGame() {
+    const saved = localStorage.getItem('towerDefenseSave');
+    if (!saved) return false;
+    
+    try {
+      const saveData = JSON.parse(saved);
+      
+      // Restore game state
+      this.state = { ...saveData.state };
+      this.enemiesKilled = saveData.enemiesKilled || 0;
+      
+      // Clear current game
+      this.enemies = [];
+      this.towers = [];
+      this.projectiles = [];
+      this.damageNumbers = [];
+      this.waveActive = false;
+      this.enemiesSpawned = 0;
+      this.waveTimer = 0;
+      
+      // Restore towers
+      if (saveData.towers) {
+        saveData.towers.forEach(towerData => {
+          let tower;
+          switch (towerData.type) {
+            case 'sniper':
+              tower = new SniperTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'cannon':
+              tower = new CannonTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'laser':
+              tower = new LaserTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'fire':
+              tower = new FireTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'ice':
+              tower = new IceTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'poison':
+              tower = new PoisonTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'lightning':
+              tower = new LightningTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            case 'amplifier':
+              tower = new AmplifierTower(towerData.x, towerData.y, this.gridSize);
+              break;
+            default:
+              tower = new BasicTower(towerData.x, towerData.y, this.gridSize);
+          }
+          
+          tower.upgradeLevel = towerData.upgradeLevel || 0;
+          tower.upgrades = towerData.upgrades || [];
+          this.towers.push(tower);
+        });
+      }
+      
+      this._notifyState();
+      this.createDamageNumber(600, 50, 'Game Loaded!', 'normal');
+      return true;
+    } catch (e) {
+      console.error('Failed to load game:', e);
+      return false;
+    }
+  }
+
+  // Check if save exists
+  hasSavedGame() {
+    return localStorage.getItem('towerDefenseSave') !== null;
   }
 
   _notifyState() { if (this.onStateChange) this.onStateChange(this.state); }
@@ -104,6 +255,9 @@ export class Game {
         // Handle special death effects
         this.handleEnemyDeath(enemy);
         
+        // Notify achievements
+        this.achievements.onEnemyKilled(enemy);
+        
         this.state.money += enemy.reward;
         this.state.score += enemy.reward;
         this.enemiesKilled++;
@@ -132,6 +286,12 @@ export class Game {
       }
     }
     
+    // Update damage numbers
+    this.damageNumbers = this.damageNumbers.filter(num => num.update(dt));
+    
+    // Update achievements
+    this.achievements.updateNotifications(dt);
+    
     if (this.state.lives <= 0) this.gameOver();
   }
 
@@ -156,6 +316,9 @@ export class Game {
         this.waveActive = false;
         this.enemiesSpawned = 0;
         this.waveTimer = 0;
+        
+        // Notify achievements of wave completion
+        this.achievements.onWaveCompleted();
       }
     }
   }
@@ -341,6 +504,10 @@ export class Game {
 
     this.state.money -= tower.cost;
     this.towers.push(tower);
+    
+    // Notify achievements
+    this.achievements.onTowerBuilt(this.selectedTowerType);
+    
     this._notifyState();
     return true;
   }
@@ -364,6 +531,12 @@ export class Game {
     return projectile;
   }
 
+  // Create floating damage number
+  createDamageNumber(x, y, damage, type = 'normal') {
+    const damageNumber = new DamageNumber(x, y, damage, type);
+    this.damageNumbers.push(damageNumber);
+  }
+
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -374,7 +547,8 @@ export class Game {
     // Render towers
     this.towers.forEach(tower => {
       const showRange = this.hoverCell && tower.x === this.hoverCell.x && tower.y === this.hoverCell.y;
-      tower.render(ctx, showRange);
+      const themeColors = this.themeManager.getTowerColors(tower.type);
+      tower.render(ctx, showRange, themeColors);
     });
     
     // Render projectiles
@@ -382,6 +556,12 @@ export class Game {
     
     // Render enemies
     this.enemies.forEach(enemy => enemy.render(ctx));
+    
+    // Render damage numbers
+    this.damageNumbers.forEach(damageNumber => damageNumber.render(ctx));
+    
+    // Render achievement notifications
+    this.achievements.renderNotifications(ctx);
     
     // Hover highlight - show build preview or tower range
     if (this.hoverCell) {

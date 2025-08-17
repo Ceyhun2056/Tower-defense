@@ -131,7 +131,7 @@ export class Projectile {
       this.applySpecialEffects(this.target, game);
       
       // Apply damage
-      this.target.takeDamage(this.damage);
+      this.target.takeDamage(this.damage, 'normal', game);
       
       // For pierce projectiles, track hit enemies but don't deactivate
       if (this.special === 'pierce') {
@@ -160,7 +160,7 @@ export class Projectile {
             // Splash damage decreases with distance
             const splashDamage = Math.floor(this.damage * 0.6 * (1 - distance / (this.splashRadius * game.gridSize)));
             if (splashDamage > 0) {
-              enemy.takeDamage(splashDamage);
+              enemy.takeDamage(splashDamage, 'splash', game);
               // Apply special effects to splash targets too
               this.applySpecialEffects(enemy, game);
             }
@@ -225,7 +225,7 @@ export class Projectile {
       
       if (nearestEnemy) {
         this.chainTargets.push(nearestEnemy);
-        nearestEnemy.takeDamage(Math.floor(currentDamage));
+        nearestEnemy.takeDamage(Math.floor(currentDamage), 'electric', game);
         this.applySpecialEffects(nearestEnemy, game);
         currentTarget = nearestEnemy;
         currentDamage *= damageReduction;

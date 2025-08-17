@@ -21,10 +21,17 @@ const statLives = document.getElementById('statLives');
 const statMoney = document.getElementById('statMoney');
 const statWave = document.getElementById('statWave');
 const statScore = document.getElementById('statScore');
+const statEnemiesKilled = document.getElementById('statEnemiesKilled');
+const statTowersBuilt = document.getElementById('statTowersBuilt');
+const statAchievements = document.getElementById('statAchievements');
+const statBossesKilled = document.getElementById('statBossesKilled');
+const themeSelector = document.getElementById('themeSelector');
 
 const btnStart = document.getElementById('btnStart');
 const btnPause = document.getElementById('btnPause');
 const btnRestart = document.getElementById('btnRestart');
+const btnSave = document.getElementById('btnSave');
+const btnLoad = document.getElementById('btnLoad');
 
 const overlay = document.getElementById('overlay');
 const startScreen = document.getElementById('startScreen');
@@ -70,11 +77,22 @@ if (isMobile) {
   mobileControls.classList.remove('hidden');
 }
 
+// Initialize theme selector
+themeSelector.value = game.themeManager.currentTheme;
+
 function updateHUD() {
   statLives.textContent = game.state.lives;
   statMoney.textContent = game.state.money;
   statWave.textContent = game.state.wave;
   statScore.textContent = game.state.score;
+  
+  // Update statistics
+  if (game.achievements) {
+    statEnemiesKilled.textContent = game.achievements.stats.enemiesKilled;
+    statTowersBuilt.textContent = game.achievements.stats.towersBuilt;
+    statBossesKilled.textContent = game.achievements.stats.bossesKilled;
+    statAchievements.textContent = `${game.achievements.getUnlockedCount()}/${game.achievements.getTotalCount()}`;
+  }
   
   // Update mobile stats
   if (isMobile) {
@@ -90,6 +108,8 @@ function updateHUD() {
   // Update button states
   btnPause.textContent = game.paused ? 'Resume' : 'Pause';
   btnPause.disabled = !game.running;
+  btnSave.disabled = !game.running;
+  btnLoad.disabled = !game.hasSavedGame();
   
   // Update tower options affordability (desktop)
   towerOptions.forEach(option => {
@@ -140,6 +160,22 @@ btnPause.addEventListener('click', () => {
   else hideOverlay();
 });
 btnRestart.addEventListener('click', () => { game.restart(); hideOverlay(); });
+btnSave.addEventListener('click', () => {
+  if (game.running) {
+    game.saveGame();
+  }
+});
+btnLoad.addEventListener('click', () => {
+  if (game.hasSavedGame()) {
+    game.loadGame();
+    hideOverlay();
+  }
+});
+
+// Theme selector
+themeSelector.addEventListener('change', (e) => {
+  game.themeManager.setTheme(e.target.value);
+});
 overlayStart.addEventListener('click', () => { game.start(); hideOverlay(); });
 overlayRestart.addEventListener('click', () => { game.restart(); hideOverlay(); });
 resumeButton.addEventListener('click', () => { game.togglePause(); hideOverlay(); });

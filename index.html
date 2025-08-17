@@ -15,6 +15,8 @@
             <button id="btnStart" class="primary">Start</button>
             <button id="btnPause">Pause</button>
             <button id="btnRestart">Restart</button>
+            <button id="btnSave">Save</button>
+            <button id="btnLoad">Load</button>
         </nav>
     </header>
     <main class="layout">
@@ -80,6 +82,41 @@
             <div class="stat"><span class="label">Money:</span><span id="statMoney">0</span></div>
             <div class="stat"><span class="label">Wave:</span><span id="statWave">0</span></div>
             <div class="stat"><span class="label">Score:</span><span id="statScore">0</span></div>
+            
+            <!-- Statistics Panel -->
+            <div class="stats-panel">
+                <h3>📊 Statistics</h3>
+                <div class="stat-grid">
+                    <div class="mini-stat">
+                        <span class="mini-label">Enemies Killed:</span>
+                        <span id="statEnemiesKilled">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Towers Built:</span>
+                        <span id="statTowersBuilt">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Achievements:</span>
+                        <span id="statAchievements">0/8</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Bosses Killed:</span>
+                        <span id="statBossesKilled">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Theme Selector -->
+            <div class="theme-panel">
+                <h3>🎨 Theme</h3>
+                <select id="themeSelector" class="theme-selector">
+                    <option value="default">Default</option>
+                    <option value="neon">Neon</option>
+                    <option value="military">Military</option>
+                    <option value="steampunk">Steampunk</option>
+                </select>
+            </div>
+            
             <div class="tower-info">
                 <h3>Tower Selection</h3>
                 <div class="tower-grid">
