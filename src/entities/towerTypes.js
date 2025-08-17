@@ -12,8 +12,8 @@ export class BasicTower extends Tower {
     this.color = { base: '#4a5568', barrel: '#2d3748' };
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
   }
 }
 
@@ -32,8 +32,8 @@ export class FireTower extends Tower {
     this.special = 'burn';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add flame effect
     ctx.save();
     ctx.shadowColor = '#f97316';
@@ -66,8 +66,8 @@ export class IceTower extends Tower {
     this.special = 'freeze';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add ice crystals
     ctx.save();
     ctx.strokeStyle = '#7dd3fc';
@@ -101,8 +101,8 @@ export class PoisonTower extends Tower {
     this.special = 'poison';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add poison bubbles
     ctx.save();
     ctx.fillStyle = 'rgba(34, 197, 94, 0.6)';
@@ -133,8 +133,8 @@ export class LightningTower extends Tower {
     this.special = 'chain';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add electric effect
     if (this.target && Math.random() < 0.3) {
       ctx.save();
@@ -193,8 +193,8 @@ export class AmplifierTower extends Tower {
     });
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Draw aura effect
     ctx.save();
     ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
@@ -224,8 +224,8 @@ export class GuardTower extends Tower {
     this.level = 2;
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add armor plating visual
     ctx.save();
     ctx.strokeStyle = this.color.barrel;
@@ -252,8 +252,8 @@ export class RapidTower extends Tower {
     this.level = 2;
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add multiple barrels visual
     ctx.save();
     ctx.translate(this.centerX, this.centerY);
@@ -283,8 +283,8 @@ export class SniperTower extends Tower {
     this.color = { base: '#065f46', barrel: '#047857' };
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     
     // Draw sniper scope
     if (this.target && this.target.active) {
@@ -319,8 +319,8 @@ export class RailgunTower extends Tower {
     this.special = 'pierce';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add charging effect when about to shoot
     if (this.target && this.lastShot > 0.8 / this.fireRate) {
       ctx.save();
@@ -352,8 +352,8 @@ export class AssassinTower extends Tower {
     this.special = 'critical';
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     // Add stealth effect
     ctx.save();
     ctx.globalAlpha = 0.8;
@@ -389,8 +389,8 @@ export class CannonTower extends Tower {
     }
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     
     // Draw cannon as larger barrel
     if (this.target && this.target.active) {
@@ -438,8 +438,8 @@ export class LaserTower extends Tower {
     }
   }
 
-  render(ctx, showRange = false) {
-    this._renderTower(ctx, showRange, this.color);
+  render(ctx, showRange = false, themeColors = null) {
+    this._renderTower(ctx, showRange, this.color, themeColors);
     
     // Draw laser beam when shooting
     if (this.target && this.target.active && this.lastShot < 0.1) {

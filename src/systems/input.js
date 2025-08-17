@@ -24,22 +24,30 @@ export class Input {
   _posFromEvent(e) {
     // Calculate position accounting for canvas scaling and device pixel ratio
     const rect = this.rect;
-    const canvasWidth = this.canvas.width / this.dpr;
-    const canvasHeight = this.canvas.height / this.dpr;
     
-    const x = (e.clientX - rect.left) * (canvasWidth / rect.width);
-    const y = (e.clientY - rect.top) * (canvasHeight / rect.height);
+    // Get the logical canvas dimensions (what the game thinks the canvas size is)
+    const logicalWidth = this.canvas.width / this.dpr;
+    const logicalHeight = this.canvas.height / this.dpr;
+    
+    // Convert screen coordinates to canvas coordinates
+    const x = ((e.clientX - rect.left) / rect.width) * logicalWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * logicalHeight;
+    
     return { x, y };
   }
   
   _posFromTouch(touch) {
     // Calculate position accounting for canvas scaling and device pixel ratio
     const rect = this.rect;
-    const canvasWidth = this.canvas.width / this.dpr;
-    const canvasHeight = this.canvas.height / this.dpr;
     
-    const x = (touch.clientX - rect.left) * (canvasWidth / rect.width);
-    const y = (touch.clientY - rect.top) * (canvasHeight / rect.height);
+    // Get the logical canvas dimensions (what the game thinks the canvas size is)
+    const logicalWidth = this.canvas.width / this.dpr;
+    const logicalHeight = this.canvas.height / this.dpr;
+    
+    // Convert screen coordinates to canvas coordinates
+    const x = ((touch.clientX - rect.left) / rect.width) * logicalWidth;
+    const y = ((touch.clientY - rect.top) / rect.height) * logicalHeight;
+    
     return { x, y };
   }
   

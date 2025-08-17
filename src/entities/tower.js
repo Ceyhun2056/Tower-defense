@@ -208,7 +208,7 @@ export class Tower {
   }
 
   // Render the tower and its range (when hovered)
-  render(ctx, showRange = false) {
+  render(ctx, showRange = false, themeColors = null) {
     // Draw range circle if requested
     if (showRange) {
       ctx.save();
@@ -322,7 +322,10 @@ export class Tower {
   }
 
   // Base render method for tower types to use
-  _renderTower(ctx, showRange = false, color = { base: '#4a5568', barrel: '#2d3748' }) {
+  _renderTower(ctx, showRange = false, color = null, themeColors = null) {
+    // Use theme colors if provided, otherwise use the passed color or default
+    const finalColor = themeColors || color || { base: '#4a5568', barrel: '#2d3748' };
+    
     // Draw range circle if requested
     if (showRange) {
       ctx.save();
@@ -345,7 +348,7 @@ export class Tower {
       this.centerX, this.centerY, 0,
       this.centerX, this.centerY, size / 2
     );
-    gradient.addColorStop(0, color.base);
+    gradient.addColorStop(0, finalColor.base);
     gradient.addColorStop(1, '#1a202c');
     
     ctx.fillStyle = gradient;
@@ -385,7 +388,7 @@ export class Tower {
       
       // Create gradient for cannon barrel
       const barrelGradient = ctx.createLinearGradient(0, -3, 0, 3);
-      barrelGradient.addColorStop(0, color.barrel);
+      barrelGradient.addColorStop(0, finalColor.barrel);
       barrelGradient.addColorStop(1, '#0d1117');
       
       ctx.fillStyle = barrelGradient;
